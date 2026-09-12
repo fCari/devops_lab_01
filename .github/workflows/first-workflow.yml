@@ -1,0 +1,20 @@
+name: First Workflow
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  first-job:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Mostrar información del contexto
+        run: |
+          echo "Hola a todos"
+          echo "Repository owner: ${{ github.repository_owner }}"
+          echo "Repository owner ID: ${{ github.repository_owner_id }}"
+          echo "Repository ID: ${{ github.repository_id }}"
