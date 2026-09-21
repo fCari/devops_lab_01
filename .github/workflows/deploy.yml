@@ -1,0 +1,74 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Instalar (si es la primera vez) y actualizar
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true
+          script: |
+            APP=/var/www/hello-deploy
+
+            # ---------- PRIMERA VEZ ----------
+            if [ ! -f /etc/systemd/system/gunicorn.service ] || [ ! -d $APP/.venv ]; then
+              echo "== Primera vez: instalando todo =="
+              sudo apt-get update -y
+              sudo apt-get install -y python3-venv python3-pip git nginx
+
+              sudo mkdir -p $APP
+              sudo chown -R $USER:$USER $APP
+              cd $APP
+              [ -d .git ] || git clone https://github.com/${{ github.repository }}.git .
+
+              [ -d .venv ] || python3 -m venv .venv
+            fi
+
+            # ---------- SIEMPRE: actualizar ----------
+            cd $APP
+            git pull origin main
+
+            .venv/bin/pip install --upgrade pip
+            .venv/bin/pip install -r requirements.txt
+
+            # .env: se crea solo si no existe
+            if [ ! -f .env ]; then
+              printf 'DJANGO_SECRET_KEY=%s\nDJANGO_DEBUG=0\nDJANGO_ALLOWED_HOSTS=%s,localhost,127.0.0.1\n' \
+                '${{ secrets.DJANGO_SECRET_KEY }}' '${{ secrets.EC2_HOST }}' > .env
+              chmod 600 .env
+            fi
+
+            set -a; . ./.env; set +a
+            .venv/bin/python manage.py migrate --noinput
+            .venv/bin/python manage.py collectstatic --noinput
+
+            # Gunicorn: copia la config del repo y reinicia
+            sudo cp deploy/gunicorn.service /etc/systemd/system/gunicorn.service
+            sudo systemctl daemon-reload
+            sudo systemctl enable gunicorn
+            sudo systemctl restart gunicorn
+
+            # Nginx: copia la config del repo, valida y recarga
+            sudo cp deploy/nginx.conf /etc/nginx/sites-available/hello-deploy
+            sudo ln -sf /etc/nginx/sites-available/hello-deploy /etc/nginx/sites-enabled/hello-deploy
+            sudo rm -f /etc/nginx/sites-enabled/default
+            sudo nginx -t
+            sudo systemctl enable nginx
+            sudo systemctl reload nginx || sudo systemctl restart nginx
+
+            # Verificar que responde
+            sleep 3
+            curl -fsS -o /dev/null http://127.0.0.1/ && echo "App respondiendo OK"
+            echo "Deploy completado"
