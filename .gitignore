@@ -1,0 +1,32 @@
+# Entornos virtuales (tu carpeta venv)
+venv/
+env/
+.venv/
+
+# Archivos de compilación de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Base de datos local (SQLite)
+db.sqlite3
+db.sqlite3-journal
+
+# Variables de entorno y secretos (¡Muy importante!)
+.env
+.env.local
+
+# Archivos de medios y estáticos recolectados (se generan en producción)
+/media/
+/staticfiles/
+
+# Configuración de editores de código
+.vscode/
+.idea/
+
+# Archivos del sistema operativo (Windows / macOS)
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+venv/
