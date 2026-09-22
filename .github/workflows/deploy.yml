@@ -61,8 +61,8 @@ jobs:
             sudo systemctl restart gunicorn
 
             # Nginx: copia la config del repo, valida y recarga
-            sudo cp deploy/nginx.conf /etc/nginx/sites-available/hello-deploy
-            sudo ln -sf /etc/nginx/sites-available/hello-deploy /etc/nginx/sites-enabled/hello-deploy
+            sudo cp deploy/nginx.conf /etc/nginx/sites-available/lab-fredy
+            sudo ln -sf /etc/nginx/sites-available/lab-fredy /etc/nginx/sites-enabled/lab-fredy
             sudo rm -f /etc/nginx/sites-enabled/default
             sudo nginx -t
             sudo systemctl enable nginx
