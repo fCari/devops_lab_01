@@ -16,8 +16,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Revisar código con Ruff
+      - name: Instalar Ruff
         run: |
           pip install ruff
+
+      - name: Dar permisos de ejecución a manage.py
+        run: |
+          chmod +x manage.py
+
+      - name: Revisar código con Ruff
+        run: |
           ruff check .
           ruff format --check .
